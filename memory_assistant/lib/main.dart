@@ -13,6 +13,8 @@ import 'services/summary_service.dart';
 import 'screens/export_screen.dart';
 import 'screens/analytics_screen.dart';
 import 'screens/memory_list_screen.dart';
+import 'screens/login_screen.dart';
+import 'screens/caregiver_screen.dart';
 
 void main() {
   runZonedGuarded(() async {
@@ -51,7 +53,12 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const MemoryAssistantScreen(),
+      initialRoute: '/login',
+      routes: {
+        '/login': (context) => const LoginScreen(),
+        '/patient': (context) => const MemoryAssistantScreen(),
+        '/caregiver': (context) => const CaregiverScreen(),
+      },
     );
   }
 }
