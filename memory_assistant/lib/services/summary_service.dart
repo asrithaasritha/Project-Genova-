@@ -7,8 +7,6 @@ class SummaryService {
         'totalMemories': 0,
         'topKeywords': <String>[],
         'categoryBreakdown': <String, int>{},
-        'moodAnalysis': <String, int>{},
-        'weeklyTrend': <String, int>{},
         'insights': <String>[],
       };
     }
@@ -17,8 +15,6 @@ class SummaryService {
       'totalMemories': memories.length,
       'topKeywords': _extractTopKeywords(memories),
       'categoryBreakdown': _getCategoryBreakdown(memories),
-      'moodAnalysis': _analyzeMood(memories),
-      'weeklyTrend': _getWeeklyTrend(memories),
       'insights': _generateTextInsights(memories),
     };
   }
@@ -60,110 +56,24 @@ class SummaryService {
     return categoryCount;
   }
   
-  static Map<String, int> _analyzeMood(List<Memory> memories) {
-    final moodKeywords = {
-      'positive': ['happy', 'joy', 'excited', 'good', 'great', 'amazing', 'wonderful', 'love', 'success', 'achieved', 'accomplished', 'proud', 'grateful', 'blessed'],
-      'negative': ['sad', 'angry', 'frustrated', 'bad', 'terrible', 'awful', 'hate', 'failed', 'disappointed', 'worried', 'stressed', 'anxious', 'upset'],
-      'neutral': ['okay', 'fine', 'normal', 'usual', 'regular', 'routine', 'standard', 'typical']
-    };
-    
-    final moodCount = {'positive': 0, 'negative': 0, 'neutral': 0};
-    
-    for (final memory in memories) {
-      final text = memory.text.toLowerCase();
-      var hasPositive = false;
-      var hasNegative = false;
-      
-      for (final keyword in moodKeywords['positive']!) {
-        if (text.contains(keyword)) {
-          hasPositive = true;
-          break;
-        }
-      }
-      
-      for (final keyword in moodKeywords['negative']!) {
-        if (text.contains(keyword)) {
-          hasNegative = true;
-          break;
-        }
-      }
-      
-      if (hasPositive && !hasNegative) {
-        moodCount['positive'] = moodCount['positive']! + 1;
-      } else if (hasNegative && !hasPositive) {
-        moodCount['negative'] = moodCount['negative']! + 1;
-      } else {
-        moodCount['neutral'] = moodCount['neutral']! + 1;
-      }
-    }
-    
-    return moodCount;
-  }
-  
-  static Map<String, int> _getWeeklyTrend(List<Memory> memories) {
-    final weeklyCount = <String, int>{};
-    final now = DateTime.now();
-    
-    for (final memory in memories) {
-      final daysDiff = now.difference(memory.timestamp).inDays;
-      String period;
-      
-      if (daysDiff == 0) {
-        period = 'Today';
-      } else if (daysDiff == 1) {
-        period = 'Yesterday';
-      } else if (daysDiff <= 7) {
-        period = 'This Week';
-      } else if (daysDiff <= 14) {
-        period = 'Last Week';
-      } else if (daysDiff <= 30) {
-        period = 'This Month';
-      } else {
-        period = 'Older';
-      }
-      
-      weeklyCount[period] = (weeklyCount[period] ?? 0) + 1;
-    }
-    
-    return weeklyCount;
-  }
-  
   static List<String> _generateTextInsights(List<Memory> memories) {
     final insights = <String>[];
+    
+    // Total memories insight
+    insights.add('You have recorded ${memories.length} memories in total.');
+    
+    // Category insights
     final categoryBreakdown = _getCategoryBreakdown(memories);
-    final moodAnalysis = _analyzeMood(memories);
-    final topKeywords = _extractTopKeywords(memories, limit: 5);
-    
-    // Most active category
     if (categoryBreakdown.isNotEmpty) {
-      final topCategory = categoryBreakdown.entries.reduce((a, b) => a.value > b.value ? a : b);
-      insights.add('Your most active category is "${topCategory.key}" with ${topCategory.value} memories.');
+      final mostUsedCategory = categoryBreakdown.entries
+          .reduce((a, b) => a.value > b.value ? a : b);
+      insights.add('Most memories are in the ${mostUsedCategory.key} category (${mostUsedCategory.value} memories).');
     }
     
-    // Mood insight
-    final totalMoods = moodAnalysis.values.reduce((a, b) => a + b);
-    if (totalMoods > 0) {
-      final dominantMood = moodAnalysis.entries.reduce((a, b) => a.value > b.value ? a : b);
-      final percentage = ((dominantMood.value / totalMoods) * 100).round();
-      insights.add('${percentage}% of your memories have a ${dominantMood.key} tone.');
-    }
-    
-    // Keyword insight
-    if (topKeywords.isNotEmpty) {
-      insights.add('Your most frequently mentioned topics include: ${topKeywords.take(3).join(', ')}.');
-    }
-    
-    // Activity insight
+    // Recent activity insight
     final recentMemories = memories.where((m) => 
-        DateTime.now().difference(m.timestamp).inDays <= 7).length;
-    if (recentMemories > 0) {
-      insights.add('You\'ve saved $recentMemories memories in the past week.');
-    }
-    
-    // Diversity insight
-    if (categoryBreakdown.length > 1) {
-      insights.add('You\'re actively using ${categoryBreakdown.length} different categories to organize your memories.');
-    }
+        DateTime.now().difference(m.timestamp).inDays < 7).length;
+    insights.add('You\'ve added $recentMemories memories in the last week.');
     
     return insights;
   }

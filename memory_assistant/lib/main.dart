@@ -10,6 +10,9 @@ import 'package:flutter_tts/flutter_tts.dart';
 import 'models/memory.dart';
 import 'services/pdf_service.dart';
 import 'services/summary_service.dart';
+import 'screens/export_screen.dart';
+import 'screens/analytics_screen.dart';
+import 'screens/memory_list_screen.dart';
 
 void main() {
   runZonedGuarded(() async {
@@ -485,7 +488,8 @@ class _MemoryAssistantScreenState extends State<MemoryAssistantScreen>
           );
           category = foundCategory;
         }
-      }
+      } 
+
     } else if (lowerCommand.contains('save as')) {
       final parts = command.split(RegExp(r'save as', caseSensitive: false));
       if (parts.isNotEmpty) {
@@ -882,23 +886,6 @@ class _MemoryAssistantScreenState extends State<MemoryAssistantScreen>
       });
     }
   }
-  Widget _buildCommandChip(BuildContext context, String text) {
-    final theme = Theme.of(context);
-    return IntrinsicWidth(
-      child: ActionChip(
-        label: Text(
-          text,
-          style: const TextStyle(fontSize: 12),
-          overflow: TextOverflow.ellipsis,
-        ),
-        backgroundColor: theme.colorScheme.surfaceContainer,
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        onPressed: () {
-          _speak("Try saying: $text");
-        },
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -911,85 +898,45 @@ class _MemoryAssistantScreenState extends State<MemoryAssistantScreen>
         body: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
               colors: [
-                colorScheme.surface,
-                colorScheme.surfaceContainerLowest,
-              ],
-            ),
-          ),
-          child: const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('Initializing Memory Assistant...'),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
-    // Show error message if there's an error
-    if (_errorMessage.isNotEmpty) {
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text('Memory Assistant'),
-          backgroundColor: colorScheme.surfaceContainer,
-        ),
-        body: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                colorScheme.surface,
-                colorScheme.surfaceContainerLowest,
+                Colors.deepPurple.shade100,
+                Colors.blue.shade50,
+                Colors.purple.shade50,
               ],
             ),
           ),
           child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 64,
-                    color: colorScheme.error,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.9),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.purple.withOpacity(0.2),
+                        blurRadius: 20,
+                        spreadRadius: 5,
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Initialization Error',
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      color: colorScheme.error,
-                    ),
+                  child: const CircularProgressIndicator(
+                    strokeWidth: 3,
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _errorMessage,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                    textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'Initializing Memory Assistant...',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: Colors.deepPurple.shade700,
+                    fontWeight: FontWeight.w600,
                   ),
-                  const SizedBox(height: 24),
-                  FilledButton(
-                    onPressed: () {
-                      setState(() {
-                        _errorMessage = '';
-                        _isLoading = true;
-                      });
-                      _initializeApp();
-                    },
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
@@ -997,281 +944,472 @@ class _MemoryAssistantScreenState extends State<MemoryAssistantScreen>
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Memory Assistant'),
-        backgroundColor: colorScheme.surfaceContainer,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.help_outline),
-            onPressed: _provideHelp,
-            tooltip: 'Help',
-          ),
-        ],
-      ),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
             colors: [
-              colorScheme.surface,
-              colorScheme.surfaceContainerLowest,
+              Colors.deepPurple.shade50,
+              Colors.blue.shade50,
+              Colors.purple.shade50,
+              Colors.indigo.shade50,
             ],
+            stops: const [0.0, 0.3, 0.7, 1.0],
           ),
         ),
         child: SafeArea(
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: 16),
-                  // Status and Category Display
-                  Container(
-                    padding: const EdgeInsets.all(16),
+          child: CustomScrollView(
+            slivers: [
+              // Enhanced App Bar
+              SliverAppBar(
+                expandedHeight: 120,
+                floating: true,
+                pinned: true,
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.share, color: Colors.white),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ExportScreen(memories: _memories),
+                        ),
+                      );
+                    },
+                    tooltip: 'Export Memories',
+                  ),
+                ],
+                flexibleSpace: FlexibleSpaceBar(
+                  background: Container(
                     decoration: BoxDecoration(
-                      color: colorScheme.surfaceContainer,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: colorScheme.outline.withOpacity(0.2),
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Colors.deepPurple.withOpacity(0.8),
+                          Colors.blue.withOpacity(0.6),
+                        ],
+                      ),
+                      borderRadius: const BorderRadius.only(
+                        bottomLeft: Radius.circular(30),
+                        bottomRight: Radius.circular(30),
                       ),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              _isListening ? Icons.mic : Icons.mic_none,
-                              color: _isListening ? colorScheme.primary : colorScheme.onSurfaceVariant,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                _status,
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: _isListening ? colorScheme.primary : colorScheme.onSurfaceVariant,
-                                  fontWeight: _isListening ? FontWeight.w600 : FontWeight.normal,
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const SizedBox(height: 20),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.psychology,
+                                color: Colors.white,
+                                size: 32,
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Memory Assistant',
+                                style: theme.textTheme.headlineSmall?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                        if (_text.isNotEmpty) ...[
-                          const SizedBox(height: 12),
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: colorScheme.primaryContainer,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              _text,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: colorScheme.onPrimaryContainer,
-                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Your AI-Powered Memory Companion',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: Colors.white.withOpacity(0.9),
                             ),
                           ),
                         ],
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.category,
-                              size: 16,
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Current Category: $_currentCategory',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+              // Main Content
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      // Category Filter Card
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Filter Memories',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
+                              const SizedBox(height: 16),
+                              DropdownButtonFormField<String>(
+                                value: _currentCategory,
+                                decoration: const InputDecoration(
+                                  labelText: 'Category',
+                                  border: OutlineInputBorder(),
+                                ),
+                                items: _categories.map((category) {
+                                  return DropdownMenuItem(
+                                    value: category,
+                                    child: Text(category),
+                                  );
+                                }).toList(),
+                                onChanged: (value) {
+                                  if (value != null) {
+                                    setState(() {
+                                      _currentCategory = value;
+                                    });
+                                  }
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      // Enhanced Status Card
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 20,
+                              spreadRadius: 0,
+                              offset: const Offset(0, 10),
                             ),
                           ],
                         ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 32),
-                  // Main Microphone Area
-                  Center(
-                    child: Column(
-                      children: [
-                        AnimatedBuilder(
-                          animation: _pulseAnimation,
-                          builder: (context, child) {
-                            return Transform.scale(
-                              scale: _isListening ? _pulseAnimation.value : 1.0,
-                              child: Container(
-                                width: 120,
-                                height: 120,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: _isListening 
-                                      ? colorScheme.primary 
-                                      : colorScheme.primaryContainer,
-                                  boxShadow: _isListening
-                                      ? [
-                                          BoxShadow(
-                                            color: colorScheme.primary.withOpacity(0.3),
-                                            blurRadius: 20,
-                                            spreadRadius: 5,
-                                          ),
-                                        ]
-                                      : null,
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: _isListening 
+                                        ? Colors.green.shade100 
+                                        : Colors.grey.shade100,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Icon(
+                                    _isListening ? Icons.mic : Icons.mic_none,
+                                    color: _isListening 
+                                        ? Colors.green.shade700 
+                                        : Colors.grey.shade600,
+                                    size: 20,
+                                  ),
                                 ),
-                                child: Material(
-                                  color: Colors.transparent,
-                                  child: InkWell(
-                                    borderRadius: BorderRadius.circular(60),
-                                    onTap: _listen,
-                                    child: Center(
-                                      child: Icon(
-                                        _isListening ? Icons.mic : Icons.mic_none,
-                                        size: 48,
-                                        color: _isListening 
-                                            ? colorScheme.onPrimary 
-                                            : colorScheme.onPrimaryContainer,
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        _status,
+                                        style: theme.textTheme.titleMedium?.copyWith(
+                                          color: _isListening 
+                                              ? Colors.green.shade700 
+                                              : Colors.grey.shade700,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Category: $_currentCategory',
+                                        style: theme.textTheme.bodySmall?.copyWith(
+                                          color: Colors.grey.shade600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (_text.isNotEmpty) ...[
+                              const SizedBox(height: 16),
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      Colors.blue.shade50,
+                                      Colors.purple.shade50,
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Colors.blue.shade200,
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Text(
+                                  _text,
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: Colors.blue.shade800,
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 40),
+
+                      // Enhanced Microphone Area
+                      Center(
+                        child: Column(
+                          children: [
+                            AnimatedBuilder(
+                              animation: _pulseAnimation,
+                              builder: (context, child) {
+                                return Container(
+                                  width: 160,
+                                  height: 160,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    gradient: _isListening
+                                        ? LinearGradient(
+                                            colors: [
+                                              Colors.red.shade400,
+                                              Colors.pink.shade400,
+                                            ],
+                                          )
+                                        : LinearGradient(
+                                            colors: [
+                                              Colors.deepPurple.shade400,
+                                              Colors.blue.shade400,
+                                            ],
+                                          ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: (_isListening 
+                                            ? Colors.red 
+                                            : Colors.deepPurple).withOpacity(0.3),
+                                        blurRadius: _isListening ? 30 : 20,
+                                        spreadRadius: _isListening ? 10 : 5,
+                                      ),
+                                    ],
+                                  ),
+                                  child: Transform.scale(
+                                    scale: _isListening ? _pulseAnimation.value : 1.0,
+                                    child: Material(
+                                      color: Colors.transparent,
+                                      child: InkWell(
+                                        borderRadius: BorderRadius.circular(80),
+                                        onTap: _listen,
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color: Colors.white.withOpacity(0.3),
+                                              width: 3,
+                                            ),
+                                          ),
+                                          child: Center(
+                                            child: Icon(
+                                              _isListening ? Icons.mic : Icons.mic_none,
+                                              size: 60,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
                                       ),
                                     ),
                                   ),
-                                ),
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 24),
+                            Text(
+                              _isListening ? 'Listening...' : 'Tap to Speak',
+                              style: theme.textTheme.headlineSmall?.copyWith(
+                                color: Colors.deepPurple.shade700,
+                                fontWeight: FontWeight.bold,
                               ),
-                            );
-                          },
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              _isListening 
+                                  ? 'Say your command or memory'
+                                  : 'I\'ll help you remember anything',
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                color: Colors.grey.shade600,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 24),
-                        Text(
-                          _isListening ? 'Listening...' : 'Tap to speak',
-                          style: theme.textTheme.headlineSmall?.copyWith(
-                            color: colorScheme.onSurface,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          _isListening 
-                              ? 'Say your command or memory'
-                              : 'I\'ll help you remember anything',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  ),
+                      ),
 
-                  const SizedBox(height: 32),
-                  // Voice Command Guide
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.lightbulb_outline,
-                                size: 20,
-                                color: colorScheme.primary,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  'Voice Commands',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    color: colorScheme.primary,
+                      const SizedBox(height: 40),
+
+                      // Enhanced Voice Commands Guide
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 15,
+                              spreadRadius: 0,
+                              offset: const Offset(0, 5),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.amber.shade100,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Icon(
+                                    Icons.lightbulb,
+                                    color: Colors.amber.shade700,
+                                    size: 20,
                                   ),
                                 ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  'Quick Commands',
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.grey.shade800,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                _buildEnhancedCommandChip(context, 'Show memories', Icons.list),
+                                _buildEnhancedCommandChip(context, 'Show analytics', Icons.analytics),
+                                _buildEnhancedCommandChip(context, 'Export PDF', Icons.picture_as_pdf),
+                                _buildEnhancedCommandChip(context, 'Save as work', Icons.work),
+                                _buildEnhancedCommandChip(context, 'What did I do today?', Icons.today),
+                                _buildEnhancedCommandChip(context, 'Help', Icons.help),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 30),
+
+                      // Enhanced Action Buttons
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildActionButton(
+                              context,
+                              'Memories (${_memories.length})',
+                              Icons.memory,
+                              Colors.deepPurple,
+                              () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => MemoryListScreen(memories: _memories),
+                                ),
                               ),
-                            ],
+                            ),
                           ),
-                          const SizedBox(height: 12),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              _buildCommandChip(context, 'Show memories'),
-                              _buildCommandChip(context, 'Show my work memories'),
-                              _buildCommandChip(context, 'Save this as work'),
-                              _buildCommandChip(context, 'What did I do today?'),
-                              _buildCommandChip(context, 'Delete last'),
-                              _buildCommandChip(context, 'Help'),
-                            ],
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildActionButton(
+                              context,
+                              'Analytics',
+                              Icons.analytics,
+                              Colors.blue,
+                              _showAnalytics,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildActionButton(
+                              context,
+                              'Export',
+                              Icons.picture_as_pdf,
+                              Colors.green,
+                              () => _exportToPdf(),
+                            ),
                           ),
                         ],
                       ),
-                    ),
-                  ),
 
-                  const SizedBox(height: 16),
-                  // Bottom Action Buttons
-                  // Bottom Action Buttons
-                  Row(
-                    children: [
-                      Expanded(
-                        child: FilledButton.icon(
-                          onPressed: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => MemoryListScreen(memories: _memories),
-                            ),
-                          ),
-                          icon: const Icon(Icons.list),
-                          label: Text('Memories (${_memories.length})'),
-                          style: FilledButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: FilledButton.icon(
-                          onPressed: _showAnalytics,
-                          icon: const Icon(Icons.analytics),
-                          label: const Text('Analytics'),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: colorScheme.secondaryContainer,
-                            foregroundColor: colorScheme.onSecondaryContainer,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: FilledButton.icon(
-                          onPressed: () => _exportToPdf(),
-                          icon: const Icon(Icons.picture_as_pdf),
-                          label: const Text('Export'),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: colorScheme.tertiaryContainer,
-                            foregroundColor: colorScheme.onTertiaryContainer,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                          ),
-                        ),
-                      ),
+                      const SizedBox(height: 30),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
         ),
       ),
     );
   }
+
+  Widget _buildEnhancedCommandChip(BuildContext context, String label, IconData icon) {
+    return ActionChip(
+      avatar: Icon(icon, size: 18),
+      label: Text(label),
+      onPressed: () {
+        _processCommand(label);
+      },
+      backgroundColor: Colors.white,
+      side: BorderSide(color: Colors.grey.shade300),
+    );
+  }
+
+  Widget _buildActionButton(
+    BuildContext context,
+    String label,
+    IconData icon,
+    Color color,
+    VoidCallback onPressed,
+  ) {
+    return FilledButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon),
+      label: Text(label),
+      style: FilledButton.styleFrom(
+        backgroundColor: color,
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(vertical: 12),
+      ),
+    );
+  }
 }
 
-class MemoryListScreen extends StatelessWidget {
+class MemoryListScreen extends StatefulWidget {
   final List<Memory> memories;
   final String title;
 
@@ -1282,126 +1420,349 @@ class MemoryListScreen extends StatelessWidget {
   });
 
   @override
+  State<MemoryListScreen> createState() => _MemoryListScreenState();
+}
+
+class _MemoryListScreenState extends State<MemoryListScreen> {
+  String _searchQuery = '';
+  String _selectedCategory = 'All';
+  
+  List<String> get _categories {
+    final categories = widget.memories.map((m) => m.category).toSet().toList();
+    categories.insert(0, 'All');
+    return categories;
+  }
+
+  List<Memory> get _filteredMemories {
+    var filtered = widget.memories;
+    
+    if (_selectedCategory != 'All') {
+      filtered = filtered.where((m) => m.category == _selectedCategory).toList();
+    }
+    
+    if (_searchQuery.isNotEmpty) {
+      filtered = filtered.where((m) => m.matches(_searchQuery)).toList();
+    }
+    
+    return filtered;
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
+    
     return Scaffold(
-      appBar: AppBar(
-        title: Text(title),
-        backgroundColor: colorScheme.surfaceContainer,
-      ),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
             colors: [
-              colorScheme.surface,
-              colorScheme.surfaceContainerLowest,
+              Colors.deepPurple.shade50,
+              Colors.blue.shade50,
+              Colors.purple.shade50,
             ],
           ),
         ),
-        child: memories.isEmpty
-            ? Center(
+        child: CustomScrollView(
+          slivers: [
+            // Enhanced App Bar
+            SliverAppBar(
+              expandedHeight: 200,
+              floating: false,
+              pinned: true,
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              flexibleSpace: FlexibleSpaceBar(
+                title: Text(
+                  widget.title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                background: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Colors.deepPurple.shade600,
+                        Colors.blue.shade500,
+                      ],
+                    ),
+                  ),
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const SizedBox(height: 40),
+                        Icon(
+                          Icons.auto_stories,
+                          size: 60,
+                          color: Colors.white.withOpacity(0.9),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          '${_filteredMemories.length} memories found',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.9),
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            // Search and Filter Section
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      Icons.memory,
-                      size: 64,
-                      color: colorScheme.onSurfaceVariant,
+                    // Search Bar
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: TextField(
+                        onChanged: (value) => setState(() => _searchQuery = value),
+                        decoration: InputDecoration(
+                          hintText: 'Search memories...',
+                          prefixIcon: Icon(Icons.search, color: Colors.grey.shade600),
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.all(16),
+                        ),
+                      ),
                     ),
+                    
                     const SizedBox(height: 16),
-                    Text(
-                      'No memories yet',
-                      style: theme.textTheme.headlineSmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
+                    
+                    // Category Filter
+                    SizedBox(
+                      height: 40,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: _categories.length,
+                        itemBuilder: (context, index) {
+                          final category = _categories[index];
+                          final isSelected = category == _selectedCategory;
+                          
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: FilterChip(
+                              label: Text(category),
+                              selected: isSelected,
+                              onSelected: (selected) {
+                                setState(() => _selectedCategory = category);
+                              },
+                              backgroundColor: Colors.white,
+                              selectedColor: Colors.deepPurple.shade100,
+                              checkmarkColor: Colors.deepPurple.shade700,
+                            ),
+                          );
+                        },
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Start saving your memories with voice commands',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                      textAlign: TextAlign.center,
                     ),
                   ],
                 ),
-              )
-            : ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: memories.length,
-                itemBuilder: (context, index) {
-                  final memory = memories[index];
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
+              ),
+            ),
+
+            // Memories List
+            _filteredMemories.isEmpty
+                ? SliverFillRemaining(
+                    child: Center(
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: colorScheme.primaryContainer,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  memory.category,
-                                  style: theme.textTheme.labelSmall?.copyWith(
-                                    color: colorScheme.onPrimaryContainer,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                              const Spacer(),
-                              Text(
-                                _formatTimestamp(memory.timestamp),
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ],
+                          Icon(
+                            Icons.search_off,
+                            size: 80,
+                            color: Colors.grey.shade400,
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 16),
                           Text(
-                            memory.text,
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              color: colorScheme.onSurface,
+                            'No memories found',
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Try adjusting your search or filters',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: Colors.grey.shade500,
                             ),
                           ),
                         ],
                       ),
                     ),
-                  );
-                },
-              ),
+                  )
+                : SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final memory = _filteredMemories[index];
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          child: _buildEnhancedMemoryCard(memory, theme),
+                        );
+                      },
+                      childCount: _filteredMemories.length,
+                    ),
+                  ),
+          ],
+        ),
       ),
     );
   }
 
-  String _formatTimestamp(DateTime timestamp) {
-    final now = DateTime.now();
-    final difference = now.difference(timestamp);
+  Widget _buildEnhancedMemoryCard(Memory memory, ThemeData theme) {
+    final priorityColor = _getPriorityColor(memory.priority);
+    
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+            // Handle memory tap
+            HapticFeedback.lightImpact();
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header Row
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.deepPurple.shade100,
+                            Colors.blue.shade100,
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        memory.category,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: Colors.deepPurple.shade700,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: priorityColor,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      memory.formattedTimestamp,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ],
+                ),
+                
+                const SizedBox(height: 12),
+                
+                // Memory Text
+                Text(
+                  memory.text,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: Colors.grey.shade800,
+                    height: 1.4,
+                  ),
+                ),
+                
+                if (memory.tags.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: memory.tags.map((tag) => Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '#$tag',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    )).toList(),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
-    if (difference.inDays > 0) {
-      return '${difference.inDays}d ago';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours}h ago';
-    } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes}m ago';
-    } else {
-      return 'Just now';
+  Color _getPriorityColor(int priority) {
+    switch (priority) {
+      case 1:
+        return Colors.grey;
+      case 2:
+        return Colors.blue;
+      case 3:
+        return Colors.green;
+      case 4:
+        return Colors.orange;
+      case 5:
+        return Colors.red;
+      default:
+        return Colors.green;
     }
   }
 }
+
 
 class AnalyticsScreen extends StatelessWidget {
   final Map<String, dynamic> insights;

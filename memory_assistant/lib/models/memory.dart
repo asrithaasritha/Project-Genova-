@@ -1,58 +1,41 @@
 class Memory {
   final String id;
   final String text;
-  final DateTime timestamp;
   final String category;
+  final DateTime timestamp;
+  final int priority;
   final List<String> tags;
-  final int priority; // 1-5, where 5 is highest priority
-  final bool isArchived;
-  final DateTime? reminderTime;
 
   Memory({
     String? id,
     required this.text,
-    required this.timestamp,
     required this.category,
-    this.tags = const [],
+    required this.timestamp,
     this.priority = 3,
-    this.isArchived = false,
-    this.reminderTime,
-  }) : id = id ?? _generateId();
-
-  static String _generateId() {
-    return DateTime.now().millisecondsSinceEpoch.toString();
-  }
+    List<String>? tags,
+  }) : 
+    id = id ?? DateTime.now().millisecondsSinceEpoch.toString(),
+    tags = tags ?? [];
 
   // Helper methods for better user experience
   String get formattedTimestamp {
     final now = DateTime.now();
     final difference = now.difference(timestamp);
-    
-    if (difference.inMinutes < 1) {
-      return 'Just now';
-    } else if (difference.inMinutes < 60) {
-      return '${difference.inMinutes}m ago';
-    } else if (difference.inHours < 24) {
-      return '${difference.inHours}h ago';
-    } else if (difference.inDays == 1) {
-      return 'Yesterday';
-    } else if (difference.inDays < 7) {
+
+    if (difference.inDays > 0) {
       return '${difference.inDays}d ago';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours}h ago';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes}m ago';
     } else {
-      return '${timestamp.day}/${timestamp.month}/${timestamp.year}';
+      return 'Just now';
     }
   }
 
   String get preview {
     if (text.length <= 100) return text;
     return '${text.substring(0, 100)}...';
-  }
-
-  bool get hasReminder => reminderTime != null;
-
-  bool get isReminderDue {
-    if (reminderTime == null) return false;
-    return DateTime.now().isAfter(reminderTime!);
   }
 
   // Search functionality
@@ -94,8 +77,6 @@ class Memory {
     String? category,
     List<String>? tags,
     int? priority,
-    bool? isArchived,
-    DateTime? reminderTime,
   }) {
     return Memory(
       id: id ?? this.id,
@@ -104,8 +85,6 @@ class Memory {
       category: category ?? this.category,
       tags: tags ?? this.tags,
       priority: priority ?? this.priority,
-      isArchived: isArchived ?? this.isArchived,
-      reminderTime: reminderTime ?? this.reminderTime,
     );
   }
 
@@ -114,27 +93,21 @@ class Memory {
     return {
       'id': id,
       'text': text,
-      'timestamp': timestamp.toIso8601String(),
       'category': category,
-      'tags': tags,
+      'timestamp': timestamp.toIso8601String(),
       'priority': priority,
-      'isArchived': isArchived,
-      'reminderTime': reminderTime?.toIso8601String(),
+      'tags': tags,
     };
   }
 
   factory Memory.fromJson(Map<String, dynamic> json) {
     return Memory(
-      id: json['id'],
+      id: json['id'] ?? '',
       text: json['text'] ?? '',
-      timestamp: DateTime.parse(json['timestamp']),
-      category: json['category'] ?? 'General',
-      tags: List<String>.from(json['tags'] ?? []),
+      category: json['category'] ?? 'Personal',
+      timestamp: DateTime.tryParse(json['timestamp'] ?? '') ?? DateTime.now(),
       priority: json['priority'] ?? 3,
-      isArchived: json['isArchived'] ?? false,
-      reminderTime: json['reminderTime'] != null 
-          ? DateTime.parse(json['reminderTime'])
-          : null,
+      tags: List<String>.from(json['tags'] ?? []),
     );
   }
 

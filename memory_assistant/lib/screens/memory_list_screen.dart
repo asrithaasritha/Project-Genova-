@@ -194,13 +194,6 @@ class _MemoryListScreenState extends State<MemoryListScreen> {
                           
                           const SizedBox(height: 16),
                           
-                          _buildInsightCard('Mood Analysis',
-                            (insights['moodAnalysis'] as Map<String, int>)
-                                .entries.map((e) => '${e.key.toUpperCase()}: ${e.value}').toList(),
-                            Icons.mood, colorScheme),
-                          
-                          const SizedBox(height: 16),
-                          
                           _buildInsightCard('Key Insights',
                             insights['insights'] as List<String>,
                             Icons.lightbulb, colorScheme),

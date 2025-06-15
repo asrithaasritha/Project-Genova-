@@ -11,102 +11,35 @@ class PdfService {
   static Future<String> generateMemoriesPdf({
     required List<Memory> memories,
     String? categoryFilter,
-    String title = 'Memory Assistant Export',
+    required String title,
   }) async {
-    final pdf = pw.Document();
-    
-    // Filter memories if category is specified
-    final filteredMemories = categoryFilter != null
-        ? memories.where((m) => m.category.toLowerCase() == categoryFilter.toLowerCase()).toList()
-        : memories;
-    
-    // Sort by timestamp, newest first
-    filteredMemories.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-    
-    // Group memories by date
-    final groupedMemories = <String, List<Memory>>{};
-    for (final memory in filteredMemories) {
-      final dateKey = DateFormat('yyyy-MM-dd').format(memory.timestamp);
-      groupedMemories.putIfAbsent(dateKey, () => []).add(memory);
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/memories_${DateTime.now().millisecondsSinceEpoch}.txt');
+      
+      final filteredMemories = categoryFilter != null
+          ? memories.where((m) => m.category == categoryFilter).toList()
+          : memories;
+
+      final content = StringBuffer();
+      content.writeln('=== $title ===\n');
+      
+      for (var memory in filteredMemories) {
+        content.writeln('Category: ${memory.category}');
+        content.writeln('Date: ${memory.timestamp.toString()}');
+        content.writeln('Text: ${memory.text}');
+        if (memory.tags.isNotEmpty) {
+          content.writeln('Tags: ${memory.tags.join(", ")}');
+        }
+        content.writeln('\n---\n');
+      }
+
+      await file.writeAsString(content.toString());
+      return file.path;
+    } catch (e) {
+      print('Error generating PDF: $e');
+      rethrow;
     }
-    
-    pdf.addPage(
-      pw.MultiPage(
-        pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.all(32),
-        build: (pw.Context context) {
-          return [
-            // Header
-            pw.Container(
-              padding: const pw.EdgeInsets.only(bottom: 20),
-              decoration: const pw.BoxDecoration(
-                border: pw.Border(
-                  bottom: pw.BorderSide(width: 2, color: PdfColors.indigo),
-                ),
-              ),
-              child: pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  pw.Text(
-                    title,
-                    style: pw.TextStyle(
-                      fontSize: 24,
-                      fontWeight: pw.FontWeight.bold,
-                      color: PdfColors.indigo,
-                    ),
-                  ),
-                  pw.SizedBox(height: 8),
-                  pw.Text(
-                    categoryFilter != null 
-                        ? 'Category: ${categoryFilter.toUpperCase()}'
-                        : 'All Categories',
-                    style: pw.TextStyle(
-                      fontSize: 14,
-                      color: PdfColors.grey700,
-                    ),
-                  ),
-                  pw.Text(
-                    'Generated on: ${DateFormat('MMMM dd, yyyy at hh:mm a').format(DateTime.now())}',
-                    style: pw.TextStyle(
-                      fontSize: 12,
-                      color: PdfColors.grey600,
-                    ),
-                  ),
-                  pw.Text(
-                    'Total Memories: ${filteredMemories.length}',
-                    style: pw.TextStyle(
-                      fontSize: 12,
-                      fontWeight: pw.FontWeight.bold,
-                      color: PdfColors.indigo,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            
-            pw.SizedBox(height: 20),
-            
-            // Summary Statistics
-            _buildSummarySection(filteredMemories),
-            
-            pw.SizedBox(height: 20),
-            
-            // Memories by date
-            ...groupedMemories.entries.map((entry) => 
-              _buildDateSection(entry.key, entry.value)
-            ).toList(),
-          ];
-        },
-      ),
-    );
-    
-    // Save PDF
-    final output = await getApplicationDocumentsDirectory();
-    final fileName = 'memories_${categoryFilter ?? 'all'}_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.pdf';
-    final file = File('${output.path}/$fileName');
-    await file.writeAsBytes(await pdf.save());
-    
-    return file.path;
   }
   
   static pw.Widget _buildSummarySection(List<Memory> memories) {
@@ -232,6 +165,11 @@ class PdfService {
   }
   
   static Future<void> shareMemoriesPdf(String filePath) async {
-    await Share.shareXFiles([XFile(filePath)], text: 'My Memory Assistant Export');
+    try {
+      await Share.shareXFiles([XFile(filePath)], text: 'My Memories');
+    } catch (e) {
+      print('Error sharing PDF: $e');
+      rethrow;
+    }
   }
 }
